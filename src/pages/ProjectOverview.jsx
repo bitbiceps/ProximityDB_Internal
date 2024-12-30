@@ -1,6 +1,5 @@
 import React from 'react';
 import DetailsSection from '../components/DetailsSection';
-
 import ActivitySection from '../components/ActivitySection';
 const Dashboard = () => {
   return (

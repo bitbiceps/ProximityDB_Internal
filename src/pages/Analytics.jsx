@@ -1,70 +1,77 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import RootLayout from "../layouts/RootLayout";
 import requests from "../axios/instance";
-import { toast } from "react-toastify"; // Import Toastify components
-import { TbLoader } from "react-icons/tb"; // Import Loader Icon
+import { toast } from "react-toastify";
+import { TbLoader } from "react-icons/tb";
+import { useDispatch } from "react-redux";
+import { setSelectedProject } from "../redux/slices/projectSlice";
+import { useNavigate } from "react-router-dom";
+import { routes } from "../utils";
 
 const Analytics = () => {
   const [page, setPage] = useState(1); // Track the current page
-  const [limit, setLimit] = useState(10); // Number of items per page
+  const [limit] = useState(10); // Number of items per page (constant)
   const [data, setData] = useState([]); // The analytics data
-  const [totalUsers, setTotalUsers] = useState(0); // Total number of users
   const [loading, setLoading] = useState(false); // Loading state for the API call
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  // Styles for status and WIP
+  // Status and WIP styles
   const statusStyles = {
-    Delivered: "bg-green-100 text-green-600",
-    "In-Progress": "bg-yellow-100 text-yellow-600",
-    "Not Started": "bg-red-100 text-red-600",
+    completed: "bg-green-100 text-green-600",
+    wip: "bg-yellow-100 text-yellow-600",
+    pending: "bg-red-100 text-red-600",
   };
 
   const wipStyles = {
-    green: "bg-green-500",
-    yellow: "bg-yellow-500",
-    red: "bg-red-500",
+    completed: "bg-green-500",
+    wip: "bg-yellow-500",
+    pending: "bg-red-500",
   };
 
-  // Fetch data when the page or limit changes
+  // Fetch analytics data and handle pagination
+  const fetchAnalyticsData = useCallback(async () => {
+    setLoading(true);
+    const toastId = toast.loading("Loading analytics...");
+
+    try {
+      const response = await requests.getPaginatedUsersAnalytics(page);
+      const { users, pagination } = response.data;
+
+      setData(users); // Set the users for the current page
+
+      toast.update(toastId, {
+        render: "Data loaded successfully!",
+        type: "success",
+        autoClose: 3000,
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error("Error fetching analytics data:", error);
+      toast.update(toastId, {
+        render: "Failed to load data",
+        type: "error",
+        autoClose: 3000,
+        isLoading: false,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [page]); // Only fetch when the page changes
+
   useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      setLoading(true);
-      const toastId = toast.loading("Loading analytics..."); // Show loading toast
-      try {
-        // Call the API with current page and limit
-        const {
-          data: { users, pagination },
-        } = await requests.getPaginatedUsersAnalytics(page);
-
-        // Assuming the response contains the data and the totalUsers count
-        setData(users); // Set the users for the current page
-        setTotalUsers(pagination.totalUsers); // Set the total users count
-
-        // Display success toast after data is successfully fetched
-        toast.update(toastId, {
-          render: "Data loaded successfully!",
-          type: "success",
-          autoClose: 3000,
-          isLoading: false,
-        });
-      } catch (error) {
-        console.error("Error fetching analytics data:", error);
-        toast.update(toastId, {
-          render: "Failed to load data",
-          type: "error",
-          autoClose: 3000,
-          isLoading: false,
-        }); // Show error toast if the API call fails
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAnalyticsData();
-  }, [page, limit]); // Fetch data when page or limit changes
+  }, [fetchAnalyticsData]); // Fetch data on mount and when page changes
 
-  // Handle pagination
+  // Handle row click to select a project
+  const handleSelectProject = (row) => {
+    dispatch(setSelectedProject(row)); // Dispatch to Redux
+    navigate(routes.project_overview); // Navigate to the project overview page
+  };
+
+  // Handle page change
   const handlePageChange = (newPage) => {
-    setPage(newPage);
+    if (newPage > 0) setPage(newPage); // Only update page if valid
   };
 
   return (
@@ -92,8 +99,9 @@ const Analytics = () => {
                 <tbody>
                   {data.map((row, index) => (
                     <tr
-                      key={index}
-                      className="hover:bg-gray-50 border-b last:border-none"
+                      key={index + "Projects"}
+                      className="hover:bg-gray-50 border-b last:border-none cursor-pointer"
+                      onClick={() => handleSelectProject(row)}
                     >
                       <td className="px-6 py-4 flex items-center space-x-3">
                         <div className="bg-blue-100 p-2 rounded-full">
@@ -116,7 +124,7 @@ const Analytics = () => {
                         <div className="relative w-32 h-2 bg-gray-200 rounded-full">
                           <div
                             className={`absolute top-0 h-2 rounded-full ${
-                              wipStyles[row.status || "red"]
+                              wipStyles[row.status] || wipStyles.pending
                             }`}
                             style={{ width: "60%" }}
                           ></div>
@@ -126,9 +134,11 @@ const Analytics = () => {
                       <td className="px-6 py-4">{row.dueDate || "NA"}</td>
                       <td className="px-6 py-4">
                         <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusStyles["Not Started"]}`}
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            statusStyles[row.status] || statusStyles.pending
+                          } capitalize`}
                         >
-                          {row.status || "Pending"}
+                          {row.status}
                         </span>
                       </td>
                     </tr>
@@ -138,6 +148,7 @@ const Analytics = () => {
             </>
           )}
         </div>
+
         {/* Pagination Controls */}
         <div className="flex justify-between mt-4">
           <button
@@ -148,21 +159,17 @@ const Analytics = () => {
             Previous
           </button>
           <div className="flex items-center">
-            <span>
-              Page {page} of {Math.ceil(totalUsers / limit)}
-            </span>
+            <span>Page {page}</span>
           </div>
           <button
             onClick={() => handlePageChange(page + 1)}
-            disabled={page * limit >= totalUsers}
+            disabled={loading}
             className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
           >
             Next
           </button>
         </div>
       </div>
-
-      {/* Toast Container */}
     </RootLayout>
   );
 };
