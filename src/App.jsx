@@ -12,9 +12,9 @@ import { routes } from "./utils";
 import Profile from "./pages/Profile";
 import ErrorPage from "./pages/ErrorPage";
 
-import InternalDashboard from "./pages/InternalDashboard";
 import Analytics from "./pages/Analytics";
 import ProjectOverview from "./pages/ProjectOverview";
+import { ToastContainer } from "react-toastify";
 const App = () => {
   const location = useLocation();
   const validRoutes = Object.values(routes); // Extract the valid route paths from the routes object
@@ -43,14 +43,11 @@ const App = () => {
             <Route path={routes.error} Component={ErrorPage} />
 
             <Route path={routes.profile} Component={Profile} />
-            <Route
-              path={routes.internal_dashboard}
-              Component={InternalDashboard}
-            />
             <Route path={routes.project_overview} Component={ProjectOverview} />
             <Route path={routes.analytics} Component={Analytics} />
           </Routes>
         </main>
+        <ToastContainer />
       </div>
     </Provider>
   );

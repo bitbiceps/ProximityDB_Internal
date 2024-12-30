@@ -21,9 +21,7 @@ const MobileSidebar = () => {
     // Nav items with Profile and Logout options
     const navItems1 = [
         { name: sideBarTabs.dashboard, to: routes.root, icon: TbDashboardFilled },
-        { name: sideBarTabs.package, to: routes.package, img: packageIcon },
-        { name: sideBarTabs.topicGenerator, to: routes.topic_generator, img: topicGeneratorIcon },
-        { name: sideBarTabs.articleWriter, to: routes.article_writer, img: articleIcon },
+        { name: sideBarTabs.analytics, to: routes.analytics, img: packageIcon },
     ];
     const navItems2 = [
         { name: sideBarTabs.profile, to: routes.profile, img: profileIcon }, // Added Profile

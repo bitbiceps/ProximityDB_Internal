@@ -15,9 +15,7 @@ export const routes = {
 
 export const sideBarTabs = {
     dashboard: "Dashboard",
-    package: "Package",
-    topicGenerator: "Topic Generator",
-    articleWriter: "Article Writer",
+    analytics: "Analytics",
     profile: "Profile",
     logout: "Logout"
 }

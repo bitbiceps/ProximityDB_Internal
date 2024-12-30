@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Line, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -12,6 +12,8 @@ import {
   Filler,
 } from "chart.js";
 import RootLayout from "../layouts/RootLayout";
+import requests from "../axios/instance";
+import { toast } from "react-toastify";
 
 // Register necessary Chart.js components
 ChartJS.register(
@@ -26,7 +28,13 @@ ChartJS.register(
 );
 
 const Dashboard = () => {
-  // Line chart data
+  // State for stats
+  const [stats, setStats] = useState({
+    pending: { count: 0, rise: 8.5 },
+    review: { count: 0, rise: 8.5 },
+    completed: { count: 0, rise: 8.5 },
+  });
+
   const lineChartData = {
     labels: ["5", "15", "25", "35", "45", "55"],
     datasets: [
@@ -47,7 +55,6 @@ const Dashboard = () => {
     ],
   };
 
-  // Doughnut chart data generator
   const doughnutData = (color) => ({
     datasets: [
       {
@@ -58,6 +65,53 @@ const Dashboard = () => {
     ],
   });
 
+  // Create a mapping from titles to the keys in the stats object
+  const titleToKeyMap = {
+    "Completed Tasks": "completed",
+    "Pending Tasks": "pending",
+    "Waiting for Review": "review",
+  };
+
+  const initialStats = useCallback(async () => {
+    const toastId = toast.loading("Fetching stats..."); // Start loading toast
+
+    try {
+      const {
+        data: { data },
+      } = await requests.getDashboardStats(); // Fetch stats
+
+      // Once the data is fetched, update the toast to a success message
+      toast.update(toastId, {
+        render: "Success",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000, // Optional, auto-close after 3 seconds
+      });
+
+      // Update stats state with the fetched data
+      setStats({
+        pending: data.pending || { count: 0, rise: 8.5 },
+        review: data.review || { count: 0, rise: 8.5 },
+        completed: data.completed || { count: 0, rise: 8.5 },
+      });
+
+      console.log(data); // Log to inspect the fetched data
+
+    } catch (error) {
+      // On error, update the toast to an error message
+      toast.update(toastId, {
+        render: error.message || "Failed to fetch.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000, // Optional, auto-close after 3 seconds
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    initialStats();
+  }, [initialStats]);
+
   return (
     <RootLayout>
       <div className="bg-gray-50 min-h-screen p-6">
@@ -66,39 +120,40 @@ const Dashboard = () => {
 
         {/* Top Stats Cards */}
         <div className="grid grid-cols-4 gap-4 mb-8">
-          {[
-            "Completed Tasks",
-            "Pending Tasks",
-            "Waiting for Review",
-            "Waiting for Review",
-          ].map((title, index) => (
-            <div
-              key={index}
-              className="bg-white p-4 rounded-lg shadow-md flex items-center justify-between"
-            >
-              <div>
-                <h2 className="text-sm font-medium text-gray-500">{title}</h2>
-                <p className="text-2xl font-bold">40,689</p>
-                <p className="text-sm text-green-500 mt-1">
-                  ↑ 8.5% Up from Last Week
-                </p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-full">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-blue-500"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
+          {["Completed Tasks", "Pending Tasks", "Waiting for Review"].map(
+            (title, index) => {
+              const key = titleToKeyMap[title]; // Use the map to get the key
+              const stat = stats[key] || { count: 0, rise: 8.5 }; // Default to 0 if no data
+              return (
+                <div
+                  key={index}
+                  className="bg-white p-4 rounded-lg shadow-md flex items-center justify-between"
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 2a6 6 0 100 12A6 6 0 0010 2zM8 7a2 2 0 114 0 2 2 0 01-4 0zm2 5a4 4 0 100-8 4 4 0 000 8zm-6 3a6 6 0 0111.98 0H4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </div>
-          ))}
+                  <div>
+                    <h2 className="text-sm font-medium text-gray-500">{title}</h2>
+                    <p className="text-2xl font-bold">{stat.count}</p>
+                    <p className="text-sm text-green-500 mt-1">
+                      ↑ {stat.rise}% Up from Last Week
+                    </p>
+                  </div>
+                  <div className="bg-blue-100 p-3 rounded-full">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-blue-500"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 2a6 6 0 100 12A6 6 0 0010 2zM8 7a2 2 0 114 0 2 2 0 01-4 0zm2 5a4 4 0 100-8 4 4 0 000 8zm-6 3a6 6 0 0111.98 0H4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              );
+            }
+          )}
         </div>
 
         {/* Graph Section */}
@@ -115,7 +170,7 @@ const Dashboard = () => {
             <div className="relative w-40 h-40">
               <Doughnut data={doughnutData("#6366F1")} />
               <div className="absolute inset-0 flex items-center justify-center">
-                <p className="text-2xl font-bold">350</p>
+                <p className="text-2xl font-bold">{stats.pending.count}</p>
               </div>
             </div>
           </div>
