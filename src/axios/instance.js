@@ -14,9 +14,13 @@ const api = axios.create({
 const getDashboardStats = async () => {
   return await api.get(apiRoutes.stats);
 };
+const getPaginatedUsersAnalytics = async (page) => {
+  return await api.get(apiRoutes.paginatedAnalytics(page))
+}
 
 const requests = {
-    getDashboardStats
+    getDashboardStats,
+    getPaginatedUsersAnalytics
 };
 
 export default requests;
