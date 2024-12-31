@@ -26,11 +26,16 @@ const completeTopic = async (payload) => {
   return await api.patch(apiRoutes.completeTopic, payload);
 };
 
+const completeArticle = async (payload) => {
+  return await api.patch(apiRoutes.completeArticle, payload);
+};
+
 const requests = {
   getDashboardStats,
   getPaginatedUsersAnalytics,
   getUserReviewCount,
   completeTopic,
+  completeArticle,
 };
 
 export default requests;

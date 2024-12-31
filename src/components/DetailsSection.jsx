@@ -1,31 +1,85 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { formatDate, projectStatus } from "../utils";
 import requests from "../axios/instance";
+import { toast } from "react-toastify";
 
+// Optimized AccordionItem
+const AccordionItem = ({ article, topic, idx, activeIndex, toggleAccordion }) => {
+  const handleArticleSubmit = useCallback(async () => {
+    try {
+      const { data } = await requests.completeArticle({ articleId: article._id });
+      toast.success(data.message);
+      toggleAccordion(idx);
+    } catch (error) {
+      toast.error(error.message || "An error occurred while submitting the article.");
+    }
+  }, [article._id, toggleAccordion, idx]);
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case "review":
+        return "text-yellow-500";
+      case "pending":
+        return "text-red-500";
+      case "completed":
+        return "text-green-500";
+      default:
+        return "text-gray-500";
+    }
+  };
+
+  return (
+    <div className="border rounded-lg">
+      <div className="flex w-full items-center justify-between p-4">
+        <button
+          onClick={() => toggleAccordion(idx)}
+          className="w-fit text-left font-semibold rounded-t-lg capitalize"
+        >
+          {topic.finalTopic}
+        </button>
+        <p className={`capitalize ${getStatusClass(article.status)}`}>
+          {article.status}
+        </p>
+      </div>
+      {activeIndex === idx && (
+        <div className="p-4 bg-white">
+          <p>{article.value}</p>
+          <button
+            type="button"
+            disabled={article.status === "completed"}
+            onClick={handleArticleSubmit}
+            className="bg-app-blue-1 hover:opacity-70 text-white rounded-lg px-4 py-2 mt-2"
+          >
+            Submit
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Main DetailsSection Component
 const DetailsSection = () => {
   const [activeTab, setActiveTab] = useState("Details");
-  const project = useSelector(
-    ({ project: { selectedProject } }) => selectedProject
-  );
-
+  const [activeIndex, setActiveIndex] = useState(null);
   const [count, setCount] = useState(0);
   const [topics, setTopics] = useState([]);
   const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(false); // State for loading status
+  const [loading, setLoading] = useState(false);
+  const project = useSelector(({ project: { selectedProject } }) => selectedProject);
 
-  // Fetch review counts (topics and articles)
   const fetchUsersReviewCount = useCallback(async () => {
     try {
-      setLoading(true); // Set loading to true when starting the fetch
+      setLoading(true);
       const { data } = await requests.getUserReviewCount(project._id);
       setCount(data.count || 0);
       setTopics(data.topics || []);
-      setArticles(data.articles || []);
+      setArticles(data.article || []);
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false); // Set loading to false after fetch
+      setLoading(false);
     }
   }, [project]);
 
@@ -36,48 +90,33 @@ const DetailsSection = () => {
   }, [project, fetchUsersReviewCount]);
 
   const { statusClassName, progressBarClassName } = useMemo(() => {
-    let statusClass = "text-gray-600";
-    let progressBarClass = "bg-gray-200";
-
     switch (project.status) {
       case projectStatus.pending:
-        statusClass = "text-red-500";
-        progressBarClass = "bg-red-500";
-        break;
+        return { statusClassName: "text-red-500", progressBarClassName: "bg-red-500" };
       case projectStatus.wip:
-        statusClass = "text-yellow-500";
-        progressBarClass = "bg-yellow-500";
-        break;
+        return { statusClassName: "text-yellow-500", progressBarClassName: "bg-yellow-500" };
       case projectStatus.completed:
-        statusClass = "text-green-500";
-        progressBarClass = "bg-green-500";
-        break;
+        return { statusClassName: "text-green-500", progressBarClassName: "bg-green-500" };
       default:
-        break;
+        return { statusClassName: "text-gray-600", progressBarClassName: "bg-gray-200" };
     }
-
-    return {
-      statusClassName: statusClass,
-      progressBarClassName: progressBarClass,
-    };
   }, [project.status]);
 
   const tabs = ["Details", "Title Review", "Article Review"];
 
-  const handleCompleteTopic = async (payload) => {
+  const handleCompleteTopic = useCallback(async (payload) => {
     try {
-      setLoading(true); // Set loading to true when the topic is being marked as completed
-      const data = await requests.completeTopic(payload);
-      console.log(data);
-      
-      // Re-fetch the updated data after marking the topic as completed
+      setLoading(true);
+      await requests.completeTopic(payload);
       fetchUsersReviewCount(); // Reload the topics and counts
     } catch (error) {
       console.error("Error completing topic:", error);
     } finally {
-      setLoading(false); // Set loading to false once the operation completes
+      setLoading(false);
     }
-  };
+  }, [fetchUsersReviewCount]);
+
+  const toggleAccordion = (idx) => setActiveIndex(activeIndex === idx ? null : idx);
 
   const renderTabContent = useMemo(() => {
     switch (activeTab) {
@@ -88,7 +127,7 @@ const DetailsSection = () => {
               <tbody>
                 <tr>
                   <td className="py-2 text-gray-600">No. Of Reviews Done</td>
-                  <td className="py-2">{count || 0}</td>{" "}
+                  <td className="py-2">{count}</td>
                 </tr>
                 <tr>
                   <td className="py-2 text-gray-600">Client Type</td>
@@ -98,9 +137,7 @@ const DetailsSection = () => {
                   <td className="py-2 text-gray-600">Status</td>
                   <td className="py-2">
                     <div className="relative w-40 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`absolute top-0 left-0 h-full w-1/2 ${progressBarClassName}`}
-                      />
+                      <div className={`absolute top-0 left-0 h-full w-1/2 ${progressBarClassName}`} />
                     </div>
                   </td>
                 </tr>
@@ -116,22 +153,15 @@ const DetailsSection = () => {
               <p>No topics in review.</p>
             ) : (
               topics.map((topic, idx) => (
-                <div
-                  key={idx + "topicDetails"}
-                  className="capitalize flex items-center gap-2 mb-2"
-                >
+                <div key={topic._id} className="capitalize flex items-center gap-2 mb-2">
                   <div>{idx + 1}</div>
                   <div className="flex-1 flex gap-2">
                     {topic.topics.map((singles, index) => (
                       <div
                         key={singles._id}
-                        onClick={() =>
-                          handleCompleteTopic({ index, _id: topic._id })
-                        }
+                        onClick={() => handleCompleteTopic({ index, _id: topic._id })}
                         className={`text-sm border border-gray-300 px-4 py-2 rounded-lg hover:border-black cursor-pointer ${
-                          topic.finalTopic === singles.value
-                            ? "text-white bg-green-500 border-none"
-                            : ""
+                          topic.finalTopic === singles.value ? "text-white bg-green-500 border-none" : ""
                         }`}
                       >
                         {singles.value}
@@ -150,9 +180,19 @@ const DetailsSection = () => {
             {articles.length === 0 ? (
               <p>No articles in review.</p>
             ) : (
-              articles.map((article, idx) => (
-                <div key={idx + "articleDetails"}>{article.status}</div>
-              ))
+              articles.map((article, idx) => {
+                const topic = topics.find((t) => t._id === article.topicId);
+                return topic ? (
+                  <AccordionItem
+                    key={article._id}
+                    article={article}
+                    topic={topic}
+                    idx={idx}
+                    activeIndex={activeIndex}
+                    toggleAccordion={toggleAccordion}
+                  />
+                ) : null;
+              })
             )}
           </div>
         );
@@ -160,7 +200,7 @@ const DetailsSection = () => {
       default:
         return null;
     }
-  }, [activeTab, count, topics, articles, progressBarClassName]);
+  }, [activeTab, count, topics, articles, progressBarClassName, activeIndex, handleCompleteTopic]);
 
   return (
     <div>
@@ -168,9 +208,7 @@ const DetailsSection = () => {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div>
           <p className="text-gray-600">Status</p>
-          <p className={`font-semibold capitalize ${statusClassName}`}>
-            {project.status}
-          </p>
+          <p className={`font-semibold capitalize ${statusClassName}`}>{project.status}</p>
         </div>
         <div>
           <p className="text-gray-600">Start Date</p>
@@ -183,11 +221,7 @@ const DetailsSection = () => {
         {tabs.map((tab) => (
           <button
             key={tab}
-            className={`py-2 px-4 ${
-              activeTab === tab
-                ? "border-b-2 border-black text-black"
-                : "text-gray-500"
-            }`}
+            className={`py-2 px-4 ${activeTab === tab ? "border-b-2 border-black text-black" : "text-gray-500"}`}
             onClick={() => setActiveTab(tab)}
           >
             {tab}
