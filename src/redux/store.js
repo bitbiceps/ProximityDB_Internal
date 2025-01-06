@@ -7,7 +7,7 @@ import rootReducer from "./rootReducer";
 const persistConfig = {
   key: "root",
   storage,
-  blacklist: ["auth"], // Exclude auth slice from persisting
+  blacklist: [""], // Exclude auth slice from persisting
 };
 
 // Create a persisted reducer

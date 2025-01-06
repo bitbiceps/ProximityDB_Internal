@@ -33,3 +33,10 @@ export const projectStatus = {
   wip: "wip",
   completed: "completed",
 };
+
+export const cookieAccessKeys = {
+  tokens: {
+    accessToken: "accessToken",
+    refreshToken: "refreshToken",
+  },
+};

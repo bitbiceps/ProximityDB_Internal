@@ -1,37 +1,44 @@
-import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { loginUser, resetState } from "../redux/slices/authSlice";
-import Auth from "../assets/auth.jpg";
-import Google from "../assets/google.jpg";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import Cookies from "js-cookie";
+import { cookieAccessKeys } from "../utils";
+import { toast } from "react-toastify";
+import Auth from "../assets/auth.jpg";
+import Google from "../assets/google.jpg";
+import "react-toastify/dist/ReactToastify.css";
 
 function Login() {
-  const dispatch = useDispatch();
-  const { loading, error, user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    dispatch(loginUser({ email, password }));
+
+    // Validate email domain
+    const domain = "@saimanshetty.com";
+    if (!email.endsWith(domain)) {
+      toast.error(`Email address is wrong`);
+      return;
+    }
+
+    // Simulate login success
+    setLoading(true);
+    // setTimeout(() => {
+    // Store email in cookies
+    Cookies.set(cookieAccessKeys?.tokens?.accessToken, email);
+
+    toast.success("Login successful!");
+    setLoading(false);
+
+    // Navigate to dashboard
+    navigate("/", {
+      replace: true,
+      state: { current: "Dashboard" },
+    });
+    // }, 1000); // Simulate a network request delay
   };
-
-  // Redirect to the home page on successful login and replace the history entry
-  useEffect(() => {
-    if (user && user.message === "Login successful") {
-      navigate("/", { replace: true }); // Replace login page in history stack
-      dispatch(resetState()); // Reset state after login
-    }
-  }, [user, navigate, dispatch]);
-
-  // Prevent logged-in users from accessing the login page
-  useEffect(() => {
-    if (user && user.message === "Login successful") {
-      navigate("/", { replace: true });
-    }
-  }, [user, navigate]);
 
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-gray-50">
@@ -49,14 +56,6 @@ function Login() {
             Unlock Your PR Potential
           </h2>
 
-          {error && (
-            <div className="bg-red-100 text-red-500 p-4 rounded-md mb-4">
-              <p className="text-sm">
-                {typeof error === "string" ? error : error.message}
-              </p>
-            </div>
-          )}
-
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm text-gray-500 mb-1">
@@ -66,20 +65,7 @@ function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="sanaray12@gmail.com"
-                className="w-full border-b-2 border-gray-300 py-1 focus:outline-none focus:border-blue-600 text-sm text-gray-800"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-500 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="****"
+                placeholder="Email"
                 className="w-full border-b-2 border-gray-300 py-1 focus:outline-none focus:border-blue-600 text-sm text-gray-800"
               />
             </div>
@@ -112,4 +98,4 @@ function Login() {
   );
 }
 
-export default Login
+export default Login;

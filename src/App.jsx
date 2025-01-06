@@ -11,7 +11,7 @@ import { routes } from "./utils";
 
 import Profile from "./pages/Profile";
 import ErrorPage from "./pages/ErrorPage";
-
+import ProtectedRoute from "./components/common/ProtectedRoutes";
 import Analytics from "./pages/Analytics";
 import ProjectOverview from "./pages/ProjectOverview";
 import { ToastContainer } from "react-toastify";
@@ -37,14 +37,26 @@ const App = () => {
         <main className="flex-1 overflow-auto min-h-screen">
           <Routes>
             <Route path={routes.login} Component={Login} />
-            <Route path={routes.registration} Component={Registration} />
-            <Route path={routes.root} Component={Dashboard} />
+            {/* <Route path={routes.registration} Component={Registration} /> */}
+            <Route
+              path={routes.root}
+              element={<ProtectedRoute Component={Dashboard} />}
+            />
 
-            <Route path={routes.error} Component={ErrorPage} />
+            <Route
+              path={routes.error}
+              element={<ProtectedRoute Component={ErrorPage} />}
+            />
 
-            <Route path={routes.profile} Component={Profile} />
-            <Route path={routes.project_overview} Component={ProjectOverview} />
-            <Route path={routes.analytics} Component={Analytics} />
+            <Route
+              path={routes.profile}
+              element={<ProtectedRoute Component={Profile} />}
+            />
+            <Route
+              path={routes.project_overview}
+              element={<ProtectedRoute Component={ProjectOverview} />}
+            />
+            <Route path={routes.analytics} element={<ProtectedRoute Component={Analytics} />}/>
           </Routes>
         </main>
         <ToastContainer />
