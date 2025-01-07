@@ -96,7 +96,6 @@ const Dashboard = () => {
       });
 
       console.log(data); // Log to inspect the fetched data
-
     } catch (error) {
       // On error, update the toast to an error message
       toast.update(toastId, {
@@ -116,8 +115,10 @@ const Dashboard = () => {
     <RootLayout>
       <div className="bg-gray-50 min-h-screen p-4 sm:p-6">
         {/* Header */}
-        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Dashboard</h1>
-  
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
+          Dashboard
+        </h1>
+
         {/* Top Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {["Completed Tasks", "Pending Tasks", "Waiting for Review"].map(
@@ -130,8 +131,12 @@ const Dashboard = () => {
                   className="bg-white p-4 rounded-lg shadow-md flex items-center justify-between"
                 >
                   <div>
-                    <h2 className="text-sm font-medium text-gray-500">{title}</h2>
-                    <p className="text-xl sm:text-2xl font-bold">{stat.count}</p>
+                    <h2 className="text-sm font-medium text-gray-500">
+                      {title}
+                    </h2>
+                    <p className="text-xl sm:text-2xl font-bold">
+                      {stat.count}
+                    </p>
                     <p className="text-xs sm:text-sm text-green-500 mt-1">
                       ↑ {stat.rise}% Up from Last Week
                     </p>
@@ -155,7 +160,7 @@ const Dashboard = () => {
             }
           )}
         </div>
-  
+
         {/* Graph Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="col-span-1 lg:col-span-2 bg-white p-4 sm:p-6 rounded-lg shadow-md">
@@ -164,7 +169,7 @@ const Dashboard = () => {
             </h2>
             <Line data={lineChartData} />
           </div>
-  
+
           <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md flex flex-col items-center justify-center">
             <h2 className="text-lg sm:text-xl font-semibold mb-4">
               Profile Readiness
@@ -172,12 +177,14 @@ const Dashboard = () => {
             <div className="relative w-32 h-32 sm:w-40 sm:h-40">
               <Doughnut data={doughnutData("#6366F1")} />
               <div className="absolute inset-0 flex items-center justify-center">
-                <p className="text-lg sm:text-2xl font-bold">{stats.pending.count}</p>
+                <p className="text-lg sm:text-2xl font-bold">
+                  {stats.pending.count}
+                </p>
               </div>
             </div>
           </div>
         </div>
-  
+
         {/* Bottom Doughnut Charts */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {["#6366F1", "#FB923C", "#A855F7"].map((color, index) => (
@@ -200,7 +207,6 @@ const Dashboard = () => {
       </div>
     </RootLayout>
   );
-  
 };
 
 export default Dashboard;
