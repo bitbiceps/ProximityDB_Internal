@@ -14,13 +14,13 @@ const ActivitySection = () => {
       name: "Name of the client",
       lastReviewed: "05/11/24",
       lastVerified: "28/10/24",
-      comment: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      // comment: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     },
     {
       name: "Name of the client",
       lastReviewed: "05/11/24",
       lastVerified: "28/10/24",
-      comment: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      // comment: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     },
   ];
 
