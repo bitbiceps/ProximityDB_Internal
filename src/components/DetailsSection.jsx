@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { formatDate, projectStatus } from "../utils";
 import requests from "../axios/instance";
 import { toast } from "react-toastify";
+import { IoMdClose, IoMdCheckmark } from "react-icons/io";
 
 // Optimized AccordionItem
 const AccordionItem = ({
@@ -59,7 +60,11 @@ const AccordionItem = ({
             type="button"
             disabled={article.status === "completed"}
             onClick={handleArticleSubmit}
-            className={article.status==="completed"?"bg-app-blue-1 opacity-70 text-white cursor-not-allowed rounded-lg px-4 py-2 mt-2":"bg-app-blue-1 hover:opacity-70 text-white rounded-lg px-4 py-2 mt-2"}
+            className={
+              article.status === "completed"
+                ? "bg-app-blue-1 opacity-70 text-white cursor-not-allowed rounded-lg px-4 py-2 mt-2"
+                : "bg-app-blue-1 hover:opacity-70 text-white rounded-lg px-4 py-2 mt-2"
+            }
           >
             Submit
           </button>
@@ -77,12 +82,23 @@ const DetailsSection = () => {
   const [topics, setTopics] = useState([]);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTopicIds, setActiveTopicIds] = useState([]);
+  // const [activeTopicIds, setActiveTopicIds] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  // Function to close the modal
+  const closeModal = () => {
+    setIsOpen(false);
+  };
+
+  // Function to open the modal
+  const openModal = () => {
+    setIsOpen(true);
+  };
 
   const project = useSelector(
     ({ project: { selectedProject } }) => selectedProject
   );
- console.log("project",project)
+
+  const [currentTopic, setCurrentTopic] = useState(null);
   const fetchUsersReviewCount = useCallback(async () => {
     try {
       setLoading(true);
@@ -193,32 +209,39 @@ const DetailsSection = () => {
                     topic.status === "review" || topic.status === "completed"
                 )
                 .map((topic, idx) => (
-                  <div
-                    key={topic._id}
-                    className="capitalize flex items-center gap-2 mb-2"
-                  >
-                    <div>{idx + 1}</div>
-                    <div className="flex-1 flex gap-2">
-                      {topic.topics.map((singles, index) => (
-                        <button
-                          key={singles._id}
-                          onClick={() =>
-                            handleCompleteTopic({ index, _id: topic._id })
-                          }
-                          disabled={topic.status === "completed"}
-                          className={`text-sm border border-gray-300 px-4 py-2 rounded-lg hover:border-black cursor-pointer ${
-                            topic.finalTopic === singles.value
-                              ? "text-white bg-green-500 border-none"
-                              : topic.status != "completed"
-                              ? " border-gray-300"
-                              : "opacity-50 cursor-not-allowed hover:cursor-not-allowed"
-                          }`}
-                        >
-                          {singles.value}
-                        </button>
-                      ))}
+                  <>
+                    <div
+                      key={topic._id}
+                      className="capitalize flex items-center gap-2 mb-2"
+                    >
+                      <div>{idx + 1}</div>
+                      <div className="flex-1 flex gap-2">
+                        {topic.topics.map((singles, index) => (
+                          <button
+                            key={singles._id}
+                            onClick={() => {
+                              setCurrentTopic({
+                                index,
+                                _id: topic._id,
+                                value: singles.value,
+                              });
+                              openModal();
+                            }}
+                            disabled={topic.status === "completed"}
+                            className={`text-sm border border-gray-300 px-4 py-2 rounded-lg hover:border-black cursor-pointer ${
+                              topic.finalTopic === singles.value
+                                ? "text-white bg-green-500 border-none"
+                                : topic.status != "completed"
+                                ? " border-gray-300"
+                                : "opacity-50 cursor-not-allowed hover:cursor-not-allowed"
+                            }`}
+                          >
+                            {singles.value}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  </>
                 ))
             )}
           </div>
@@ -235,7 +258,7 @@ const DetailsSection = () => {
                   (topic) =>
                     topic.status === "review" || topic.status === "completed"
                 )
-              .map((article, idx) => {
+                .map((article, idx) => {
                   const topic = topics.find((t) => t._id === article.topicId);
                   return topic ? (
                     <AccordionItem
@@ -268,6 +291,12 @@ const DetailsSection = () => {
   return (
     <div>
       {/* Overview Section */}
+      <Modal
+        closeModal={closeModal}
+        isOpen={isOpen}
+        currentTopic={currentTopic}
+        handleCompleteTopic={handleCompleteTopic}
+      />
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div>
           <p className="text-gray-600">Status</p>
@@ -309,3 +338,40 @@ const DetailsSection = () => {
 };
 
 export default DetailsSection;
+
+const Modal = ({ closeModal, isOpen, currentTopic, handleCompleteTopic }) => {
+  return (
+    <div>
+      {isOpen && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-lg max-w-sm w-full">
+            <h2 className="text-2xl font-medium text-gray-800 mb-4">
+              Are you sure?
+            </h2>
+            <p className="text-gray-600 mb-6">{currentTopic.value}</p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={closeModal}
+                className="px-6 py-2 bg-transparent text-gray-600 rounded-full border border-gray-300 hover:bg-gray-100 transition-all"
+              >
+                <IoMdClose size={24} />
+              </button>
+              <button
+                onClick={() => {
+                  handleCompleteTopic({
+                    index: currentTopic.index,
+                    _id: currentTopic._id,
+                  });
+                  closeModal();
+                }}
+                className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all"
+              >
+                <IoMdCheckmark size={24} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
